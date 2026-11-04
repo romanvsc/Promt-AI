@@ -1,0 +1,15 @@
+# Ficha de {{NAME}}
+
+Preparación iniciada el {{DATE}}. La instalación agrega herramientas y documentación, sin generar una aplicación ni declarar funciones terminadas.
+
+- Perfil de adaptación: `{{PROFILE}}` — {{PROFILE_DESCRIPTION}}
+- Lenguaje/framework/versiones por componente: registrar los confirmados; consultar lo que falte y conservar combinaciones de stacks cuando correspondan.
+- Interfaz, plataformas y ejecución: por relevar.
+- Base de datos y persistencia: por relevar.
+- Integraciones y restricciones operativas: por relevar.
+- Objetivo, actores, procesos y vocabulario: por relevar con el usuario y sus fuentes.
+- Autorización inicial: preparar requisitos, arquitectura, skills, plan y visor. Desarrollo funcional sujeto a un pedido posterior que lo incluya.
+
+El agente consulta el stack al iniciar y usa lo ya informado. Si el usuario no eligió tecnología, conserva el perfil base hasta resolver la decisión. Un manifiesto existente es evidencia del stack observado, no una autorización para cambiarlo.
+
+Las decisiones se registran en [decisiones](decisiones/README.md); los contextos y contratos en [arquitectura](arquitectura/README.md). Las tareas y su estado viven en [plan maestro](plan-maestro/README.md).
