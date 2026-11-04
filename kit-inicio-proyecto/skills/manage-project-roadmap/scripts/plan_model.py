@@ -15,6 +15,10 @@ ID = SCHEMA['id_pattern']
 HEADING = re.compile(r'^### \[([A-Z_]+)\] (' + ID + r') — (.+)$')
 FIELD = re.compile(r'^- \*\*([^*\n]+):\*\*[ \t]*(.*)$')
 PLACEHOLDERS = {'', 'pendiente', 'sin asignar', 'sin evidencia', 'hecho', 'todo', 'tbd', 'por completar', 'ninguno'}
+IMAGE = re.compile(r'!\[([^\]\n]*)\]\(([^)\n]*)\)')
+# Sin SVG: puede contener scripts.
+IMAGE_TYPES = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp'}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
 def normalized(value: str) -> str:
@@ -25,6 +29,33 @@ def iso_date(value: str) -> date:
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
         raise ValueError('Formato de fecha inválido.')
     return date.fromisoformat(value)
+
+
+def evidence_images(task: dict, plan_dir: Path) -> tuple[list, list]:
+    """Imágenes de Evidencia actual; plan_dir ya resuelto. Las rutas son relativas al .md de la tarea."""
+    images, errors = [], []
+    for alt, reference in IMAGE.findall(task['fields'].get('Evidencia actual', '')):
+        path = (plan_dir / task['source']).parent / reference
+        problem = None
+        try:
+            resolved = path.resolve()
+            if not alt.strip():
+                problem = 'requiere texto alternativo'
+            elif path.is_symlink() or not resolved.is_relative_to(plan_dir):
+                problem = 'debe ser un archivo dentro del plan'
+            elif resolved.suffix.lower() not in IMAGE_TYPES:
+                problem = 'tiene un tipo no permitido (' + ', '.join(IMAGE_TYPES) + ')'
+            elif not resolved.is_file():
+                problem = 'no existe'
+            elif resolved.stat().st_size > MAX_IMAGE_BYTES:
+                problem = f'supera {MAX_IMAGE_BYTES // 1024 // 1024} MB'
+        except (OSError, ValueError):
+            problem = 'tiene una ruta inválida'
+        if problem:
+            errors.append(f"{task['id']}: la imagen {reference} {problem}.")
+        else:
+            images.append({'alt': alt.strip(), 'path': resolved.relative_to(plan_dir).as_posix()})
+    return images, errors
 
 
 def parse_plan(plan_dir: Path) -> dict:
@@ -150,6 +181,8 @@ def parse_plan(plan_dir: Path) -> dict:
             task['dependencies'] = []
             errors.append(f'{key}: Dependencias requiere ninguna o IDs por comas.')
         task['scope'] = scope
+        task['images'], image_errors = evidence_images(task, plan_dir)
+        errors.extend(image_errors)
     for task in tasks:
         for prerequisite in task['dependencies']:
             if prerequisite not in by_id:

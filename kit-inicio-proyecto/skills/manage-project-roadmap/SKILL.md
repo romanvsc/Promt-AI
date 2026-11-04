@@ -21,7 +21,7 @@ Los comandos aceptan `--root` para otro proyecto y `--plan-dir` para otro plan. 
 
 La exportación HTML es autosuficiente. La sincronización escucha solo en `127.0.0.1`; valida antes de publicar, mantiene la última versión válida ante errores y no escribe Markdown. Sirve el visor, JSON y copias de las especificaciones validadas, no el repositorio completo. Ctrl+C la detiene.
 
-Buscar por ID/título, filtrar área/capa/estado, seleccionar detalles y recorrer la cadena completa. Las flechas van del requisito al dependiente y salen de Dependencias, sin deducir estados o relaciones narrativas. Los filtros, selección y zoom se conservan al recibir cambios. Todos los campos del esquema se muestran en el detalle.
+Buscar por ID/título, filtrar área/capa/estado, seleccionar detalles y recorrer la cadena completa. Las flechas van del requisito al dependiente y salen de Dependencias, sin deducir estados o relaciones narrativas. Los filtros, selección y zoom se conservan al recibir cambios. Todos los campos del esquema se muestran en el detalle. Las imágenes declaradas en Evidencia actual aparecen allí como Evidencia visual; se embeben en el HTML, por lo que la exportación crece con ellas.
 
 Ante un error del plan, corregir la fuente siguiendo su alcance; no debilitar la validación ni reemplazar una evidencia para mostrar verde. El reporte calcula estados desde Markdown y no acredita aceptación del producto o publicación.
 

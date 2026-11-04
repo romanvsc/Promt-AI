@@ -18,7 +18,7 @@ from urllib.request import Request, urlopen
 KIT = Path(__file__).resolve().parents[1]
 SCRIPTS = KIT / 'skills/manage-project-roadmap/scripts'
 sys.path.insert(0, str(SCRIPTS))
-from plan_model import FIELDS, SCHEMA, STATES, parse_plan
+from plan_model import FIELDS, MAX_IMAGE_BYTES, SCHEMA, STATES, parse_plan
 from roadmap import metadata, render, snapshot
 from roadmap_server import Monitor, create_server
 
@@ -219,6 +219,30 @@ class ReportAndExportTest(PlanFixture):
         other, _ = snapshot(self.root, self.plan, self.root / 'exports/view.html')
         self.assertEqual('../docs/plan-maestro/01-prueba.md', other['tasks'][0]['sourceUrl'])
 
+    def test_evidence_images_are_embedded_and_keep_the_export_self_contained(self):
+        folder = self.plan / 'capturas'
+        folder.mkdir()
+        (folder / 'despues.PNG').write_bytes(b'imagen')
+        self.validate(task(**{'Evidencia actual': 'Pantalla lista\n  - ![Después del cambio](capturas/despues.PNG)'}))
+        report = parse_plan(self.plan)
+        self.assertEqual([{'alt': 'Después del cambio', 'path': 'capturas/despues.PNG'}], report['tasks'][0]['images'])
+        graph, _ = snapshot(self.root, self.plan, self.output)
+        self.assertEqual([{'alt': 'Después del cambio', 'src': 'data:image/png;base64,aW1hZ2Vu'}], graph['tasks'][0]['images'])
+        self.assertIn('data:image/png;base64,aW1hZ2Vu', render(graph))
+
+    def test_invalid_evidence_images_are_rejected(self):
+        (self.root / 'privada.png').write_bytes(b'privada')
+        (self.plan / 'script.svg').write_text('<svg/>', encoding='utf-8')
+        (self.plan / 'bien.png').write_bytes(b'imagen')
+        (self.plan / 'grande.png').write_bytes(b'0' * (MAX_IMAGE_BYTES + 1))
+        for reference, expected in (('![fuera](../../privada.png)', 'dentro del plan'), ('![falta](falta.png)', 'no existe'),
+                                    ('![web](https://example.com/a.png)', 'no existe'), ('![svg](script.svg)', 'no permitido'),
+                                    ('![](bien.png)', 'texto alternativo'), ('![grande](grande.png)', 'supera')):
+            with self.subTest(reference=reference):
+                report = self.validate(task(**{'Evidencia actual': reference}))
+                self.assertFalse(report['valid'])
+                self.assertIn(expected, ' '.join(report['errors']))
+
     def test_invalid_plan_or_output_keeps_the_previous_artifact(self):
         self.output.write_text('Previous valid artifact', encoding='utf-8')
         self.validate(task(dependencies='QA-999'))
@@ -284,6 +308,16 @@ class MonitorTest(PlanFixture):
         moved.unlink()
         self.assertTrue(monitor.refresh())
         self.assertEqual(1, len(monitor.graph['tasks']))
+
+    def test_replacing_an_evidence_image_updates_the_snapshot(self):
+        image = self.plan / 'captura.png'
+        image.write_bytes(b'antes')
+        self.validate(task(**{'Evidencia actual': '![Captura](captura.png)'}))
+        monitor = self.monitor()
+        previous = monitor.graph['tasks'][0]['images'][0]['src']
+        image.write_bytes(b'despues')
+        self.assertTrue(monitor.refresh())
+        self.assertNotEqual(previous, monitor.graph['tasks'][0]['images'][0]['src'])
 
     def test_source_race_and_write_error_do_not_publish_partial_updates(self):
         monitor = self.monitor()

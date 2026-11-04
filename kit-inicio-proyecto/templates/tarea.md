@@ -21,4 +21,4 @@ Copiar este bloque en una especificación y completar los campos con informació
 - **Evidencia actual:** punto de partida observado y límites
 ```
 
-PROPUESTO no autoriza implementación. EN_CURSO requiere responsable e inicio; HECHO necesita evidencia y dependencias cerradas. Para EXCLUIDO, registrar la decisión explícita y su ID en Fuente.
+PROPUESTO no autoriza implementación. EN_CURSO requiere responsable e inicio; HECHO necesita evidencia y dependencias cerradas. Para EXCLUIDO, registrar la decisión explícita y su ID en Fuente. Evidencia actual puede incluir capturas del cambio con `![descripción](capturas/AREA-001-despues.png)`, guardadas dentro de la carpeta del plan.

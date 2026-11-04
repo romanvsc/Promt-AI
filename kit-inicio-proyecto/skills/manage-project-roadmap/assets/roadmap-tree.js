@@ -16,7 +16,7 @@
   const states = new Set(data.states);
   const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const viewport = $("viewport");
-  let selected = null, chain = null, visible = [], positions = new Map();
+  let selected = null, chain = null, visible = [], positions = new Map(), imageIndex = 0, stepImage = () => {};
   let scale = 1, pan = {x: 0, y: 0}, bounds = {width: 1, height: 1}, drag = null;
   const element = (tag, text, className) => {
     const node = document.createElement(tag);
@@ -90,7 +90,7 @@
     chain = null;
   }
   function select(id, fromList = false, fromRelation = false) {
-    selected = id;
+    selected = id; imageIndex = 0;
     if (fromRelation) {resetFilters(); render(false);}
     else {paintSelection(); renderDetail();}
     if (fromList || fromRelation) center(id);
@@ -171,6 +171,39 @@
     if (!ids.length) list.append(element("p", "Sin tareas con ID explícito."));
     section.append(list); return section;
   }
+  function imageGallery(images) {
+    imageIndex = Math.min(imageIndex, images.length - 1);
+    const gallery = element("div"), button = element("button", undefined, "evidence-image"), thumbnail = element("img"), caption = element("span"), counter = element("output");
+    thumbnail.alt = "";
+    button.append(thumbnail, caption);
+    button.addEventListener("click", () => $("image-viewer").showModal());
+    // Actualiza en el lugar: renderDetail perdería el foco y el scroll del panel.
+    const show = () => {
+      const image = images[imageIndex];
+      button.setAttribute("aria-label", `Ampliar imagen: ${image.alt}`);
+      thumbnail.src = image.src; caption.textContent = image.alt;
+      counter.textContent = $("image-count").textContent = `${imageIndex + 1} / ${images.length}`;
+      $("image-title").textContent = image.alt;
+      $("image-full").src = image.src; $("image-full").alt = image.alt;
+      $("image-full").parentElement.scrollTop = 0;
+    };
+    stepImage = (delta) => {imageIndex = (imageIndex + delta + images.length) % images.length; show();};
+    const stepper = (text, label, delta) => {
+      const step = element("button", text);
+      step.setAttribute("aria-label", label);
+      step.addEventListener("click", () => stepImage(delta));
+      return step;
+    };
+    show();
+    $("image-nav").hidden = images.length < 2;
+    gallery.append(button);
+    if (images.length > 1) {
+      const nav = element("div", undefined, "evidence-nav");
+      nav.append(stepper("‹", "Imagen anterior", -1), counter, stepper("›", "Imagen siguiente", 1));
+      gallery.append(nav);
+    }
+    return gallery;
+  }
   function renderDetail() {
     document.querySelector(".workspace").classList.toggle("has-detail", Boolean(selected));
     if (!selected) {
@@ -188,6 +221,7 @@
     if (chain || !visible.some((item) => item.id === task.id)) body.append(element("p", chain ? `Cadena completa de ${chain}; los filtros quedan suspendidos hasta salir.` : "Esta tarea quedó fuera de los filtros actuales."));
     const actions = element("div", undefined, "detail-actions"), branch = element("button", chain ? "Salir de la cadena" : "Ver cadena completa");
     branch.addEventListener("click", () => {chain = chain ? null : task.id; render();}); actions.append(branch); body.append(actions);
+    if (task.images.length) body.append(element("h3", "Evidencia visual"), imageGallery(task.images));
     body.append(relationSection("Requisitos", task.dependencies), relationSection("Dependientes", dependents.get(task.id)));
     for (const label of data.fieldNames) {
       body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : label), element("p", task.fields[label]));
@@ -245,7 +279,13 @@
   const closeHelp = () => {$("help").close(); $("help-open").focus();};
   $("help-close").addEventListener("click", closeHelp); $("help-done").addEventListener("click", closeHelp);
   $("help").addEventListener("cancel", (event) => {event.preventDefault(); closeHelp();});
-  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !$("help").open && selected) {event.preventDefault(); closeDetail();}});
+  $("image-close").addEventListener("click", () => $("image-viewer").close());
+  $("image-prev").addEventListener("click", () => stepImage(-1)); $("image-next").addEventListener("click", () => stepImage(1));
+  $("image-viewer").addEventListener("keydown", (event) => {
+    const delta = {ArrowLeft: -1, ArrowRight: 1}[event.key];
+    if (delta && !$("image-nav").hidden) {event.preventDefault(); stepImage(delta);}
+  });
+  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !document.querySelector("dialog[open]") && selected) {event.preventDefault(); closeDetail();}});
   new ResizeObserver(() => selected && positions.has(selected) ? center(selected) : readableFrame()).observe(viewport);
   render();
 
