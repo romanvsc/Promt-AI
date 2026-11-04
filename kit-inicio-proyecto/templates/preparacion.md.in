@@ -1,6 +1,6 @@
 # Preparación de {{NAME}}
 
-La instalación prepara las herramientas; las tareas siguientes requieren análisis del proyecto. El stack se consulta al iniciar, usando los datos ya informados. No se generaron funcionalidades.
+La instalación prepara las herramientas y la raíz `{{SOURCE_ROOT}}/` con `.gitkeep`; las tareas siguientes requieren análisis del proyecto. El stack y las fuentes se consultan al iniciar, usando los datos ya informados. No se generaron funcionalidades.
 
 ## Tareas
 
@@ -13,12 +13,12 @@ La instalación prepara las herramientas; las tareas siguientes requieren análi
 - **Alcance:** relevar objetivo, actores, procesos, restricciones y decisiones tecnológicas confirmadas
 - **Fuera de alcance:** implementar funcionalidades o elegir un stack por inferencia
 - **Invariantes:** distinguir solicitud, propuesta, exclusión y evidencia; conservar decisiones confirmadas
-- **Contratos y archivos previstos:** docs/proyecto.md y docs/decisiones
-- **Criterios de aceptación:** fuentes identificadas, stack consultado, requisitos conocidos y preguntas materiales registradas sin inventar respuestas
+- **Contratos y archivos previstos:** docs/proyecto.md, docs/fuentes/README.md y docs/decisiones
+- **Criterios de aceptación:** consulta explícita de fuentes respondida y registrada en su índice, incluida la confirmación de no tener fuentes adicionales si corresponde; stack consultado, requisitos conocidos y preguntas materiales registradas sin inventar respuestas
 - **Responsable:** sin asignar
 - **Fecha de inicio:** pendiente
 - **Última actualización:** {{DATE}}
-- **Próximo paso:** revisar la conversación, los adjuntos y el repositorio; preguntar solo los datos relevantes que falten
+- **Próximo paso:** revisar la conversación, los adjuntos y el repositorio; preguntar por fuentes y stack pendientes, registrar la respuesta del usuario y mantener abierta la consulta hasta recibirla
 - **Evidencia actual:** se instalaron los recursos de preparación; el relevamiento funcional todavía no se realizó
 
 ### [PENDIENTE] INI-002 — Definir contextos, datos y contratos de arquitectura
@@ -29,9 +29,9 @@ La instalación prepara las herramientas; las tareas siguientes requieren análi
 - **Dependencias:** INI-001
 - **Alcance:** definir lenguaje, fronteras, propiedad de datos y contratos, adaptando las capas al stack confirmado
 - **Fuera de alcance:** construir servicios, instalar frameworks o suponer microservicios
-- **Invariantes:** dependencias hacia el núcleo, dominio independiente y escrituras por casos de uso
+- **Invariantes:** raíz del código src salvo elección explícita del usuario; dependencias hacia el núcleo, dominio independiente y escrituras por casos de uso
 - **Contratos y archivos previstos:** docs/arquitectura/README.md y decisiones relacionadas
-- **Criterios de aceptación:** contextos justificados por procesos y reglas, contratos y dependencias explícitos y decisiones abiertas identificadas
+- **Criterios de aceptación:** contextos justificados por procesos y reglas bajo la raíz registrada, contratos y dependencias explícitos, autoload/imports previstos sin mover el núcleo al framework y decisiones abiertas identificadas; cualquier excepción a src tiene solicitud y fecha
 - **Responsable:** sin asignar
 - **Fecha de inicio:** pendiente
 - **Última actualización:** {{DATE}}

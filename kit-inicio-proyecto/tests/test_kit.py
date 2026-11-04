@@ -380,16 +380,23 @@ class InstallerTest(unittest.TestCase):
         config = json.loads((self.target / '.agents/project.json').read_text())
         self.assertEqual('base', config['profile'])
         self.assertEqual('preparacion', config['stage'])
+        self.assertEqual('src', config['source_root'])
+        self.assertFalse(config['source_root_override'])
+        self.assertEqual(b'', (self.target / 'src/.gitkeep').read_bytes())
+        self.assertEqual([self.target / 'src/.gitkeep'], list((self.target / 'src').iterdir()))
+        self.assertTrue((self.target / config['sources_index']).is_file())
         self.assertEqual(3, len(list((self.target / '.agents/skills').glob('*/SKILL.md'))))
         report = parse_plan(self.target / 'docs/plan-maestro')
         self.assertTrue(report['valid'], report['errors'])
         self.assertEqual({'PENDIENTE': 3}, report['counts'])
-        for path in ('src', 'lib', 'go.mod', 'composer.json', 'package.json'):
+        for path in ('app', 'lib', 'internal', 'go.mod', 'composer.json', 'package.json'):
             self.assertFalse((self.target / path).exists())
 
     def test_dry_run_makes_no_target_changes(self):
         result = self.install(dry_run=True)
         self.assertTrue(result['create'])
+        self.assertIn('src/.gitkeep', result['create'])
+        self.assertIn('docs/fuentes/README.md', result['create'])
         self.assertFalse(self.target.exists())
 
     def test_repeated_installation_is_idempotent_and_preserves_initial_date(self):
@@ -407,7 +414,68 @@ class InstallerTest(unittest.TestCase):
                 self.install(target=target, profile=profile)
                 config = json.loads((target / '.agents/project.json').read_text())
                 self.assertEqual(profile, config['profile'])
+                self.assertEqual('src', config['source_root'])
+                self.assertTrue((target / 'src/.gitkeep').is_file())
+                for alternative in ('app/Contexts', 'lib', 'internal'):
+                    self.assertFalse((target / alternative).exists())
                 self.assertTrue(parse_plan(target / 'docs/plan-maestro')['valid'])
+
+    def test_explicit_source_root_is_used_and_preserved_on_repeat(self):
+        self.install(source_root='codigo propio/contextos')
+        config = json.loads((self.target / '.agents/project.json').read_text())
+        self.assertEqual('codigo propio/contextos', config['source_root'])
+        self.assertTrue(config['source_root_override'])
+        self.assertTrue((self.target / config['source_root'] / '.gitkeep').is_file())
+        self.assertFalse((self.target / 'src').exists())
+        self.assertEqual([], self.install(source_root=None, started=None)['create'])
+        before = {path.relative_to(self.target): path.read_bytes() for path in self.target.rglob('*') if path.is_file()}
+        with self.assertRaises(ValueError):
+            self.install(source_root='src')
+        self.assertEqual(before, {path.relative_to(self.target): path.read_bytes() for path in self.target.rglob('*') if path.is_file()})
+
+    def test_cli_uses_src_unless_a_different_source_root_is_explicit(self):
+        command = [sys.executable, '-B', str(KIT / 'scripts/init_project.py'), '--name', 'Proyecto CLI', '--profile', 'laravel']
+        for folder, options, expected in (('default', [], 'src'), ('explicit', ['--source-root', 'app/Contexts'], 'app/Contexts')):
+            with self.subTest(folder=folder):
+                target = self.root / folder
+                result = subprocess.run(command + ['--target', str(target)] + options, capture_output=True, text=True)
+                self.assertEqual(0, result.returncode, result.stderr)
+                config = json.loads((target / '.agents/project.json').read_text())
+                self.assertEqual(expected, config['source_root'])
+                self.assertTrue((target / expected / '.gitkeep').is_file())
+                self.assertFalse((target / ('app' if expected == 'src' else 'src')).exists())
+
+    def test_invalid_source_roots_do_not_create_target_files(self):
+        for source_root in ('', '.', '..', '../outside', '/src', 'src/../outside', 'src//core', 'src/./core',
+                            'src/', ' src', 'src\\core', 'C:/src', '.git/core', '.agents/core', 'docs/core', 'src\ncore'):
+            with self.subTest(source_root=source_root), self.assertRaises(ValueError):
+                self.install(source_root=source_root)
+            self.assertFalse(self.target.exists())
+
+    def test_incompatible_source_root_blocks_all_writes(self):
+        self.target.mkdir()
+        source = self.target / 'src'
+        source.write_text('Existing file', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            self.install()
+        self.assertEqual([source], list(self.target.iterdir()))
+        self.assertEqual('Existing file', source.read_text())
+        source.unlink()
+        outside = self.root / 'external-code'
+        outside.mkdir()
+        source.symlink_to(outside, target_is_directory=True)
+        with self.assertRaises(ValueError):
+            self.install()
+        self.assertEqual([], list(outside.iterdir()))
+        self.assertEqual([source], list(self.target.iterdir()))
+
+    def test_existing_business_files_are_preserved_without_creating_framework_contexts(self):
+        source = self.target / 'src/Orders/Domain/order.php'
+        source.parent.mkdir(parents=True)
+        source.write_text('Existing business code', encoding='utf-8')
+        self.install(profile='laravel')
+        self.assertEqual('Existing business code', source.read_text())
+        self.assertFalse((self.target / 'app').exists())
 
     def test_conflicting_agents_or_managed_file_blocks_all_writes(self):
         self.target.mkdir()
@@ -471,6 +539,8 @@ class PackageTest(unittest.TestCase):
             result = subprocess.run([sys.executable, '-B', str(extracted / 'scripts/init_project.py'), '--target', str(project),
                                      '--name', 'Proyecto portable', '--profile', 'go', '--date', '2026-11-03'], capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue((project / 'src/.gitkeep').is_file())
+            self.assertTrue((project / 'docs/fuentes/README.md').is_file())
             command = [sys.executable, '-B', str(project / '.agents/skills/manage-project-roadmap/scripts/roadmap.py')]
             report = subprocess.run(command + ['report', '--root', str(project), '--json'], capture_output=True, text=True)
             self.assertEqual(0, report.returncode, report.stderr)

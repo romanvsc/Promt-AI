@@ -9,6 +9,7 @@ Leer `AGENTS.md`, `docs/proyecto.md` y `docs/arquitectura/README.md` desde la ra
 
 ## Preparar la arquitectura
 
+- Usar `/src` en la raíz del repositorio para el código propio, siempre salvo elección explícita del usuario. Registrar la raíz efectiva en `.agents/project.json`, ficha y arquitectura; una excepción necesita solicitud y fecha en decisiones. Ni un perfil ni las convenciones existentes autorizan cambiarla. Base: `src/<Contexto>/{Domain,Application,Infrastructure,UI}`; adaptar nombres/empaquetado internos al lenguaje conservando src. No reemplazarla por `app/Contexts`, `app/Domain`, `lib/src` o `internal` en la raíz. Los archivos técnicos de arranque/composición que el framework exija pueden quedar fuera, sin reglas de negocio.
 - Partir de actores, lenguaje, procesos, invariantes y propiedad de datos. Derivar contextos de esas reglas; no crearlos por cada pantalla ni suponer microservicios.
 - Organizar por contexto y, dentro, Domain, Application, Infrastructure y UI/Presentation. La dirección de dependencias apunta al núcleo; la composición conecta adaptadores con puertos.
 - Domain contiene entidades, agregados, value objects, invariantes, servicios y eventos sin frameworks, ORM, HTTP o SDKs. Application coordina casos de uso y depende de contratos del núcleo, nunca de Infrastructure/UI ni de servicios globales del framework.
@@ -21,10 +22,10 @@ Registrar decisiones materiales con la plantilla de `docs/plantillas/decision.md
 
 ## Aplicar a trabajo autorizado
 
-Leer la tarea y sus criterios antes de modificar código; actualizar estado y evidencia mediante las skills del plan. El arranque del kit prepara documentación, skills y herramientas. Crear una estructura de aplicación, instalar dependencias o desarrollar funcionalidades requiere que el pedido cubra ese trabajo; no nace de invocar esta skill.
+Leer la tarea y sus criterios antes de modificar código; actualizar estado y evidencia mediante las skills del plan. El arranque del kit prepara documentación, skills, herramientas y la raíz src con `.gitkeep`, sin contextos ficticios. Instalar un framework o desarrollar funcionalidades requiere que el pedido cubra ese trabajo; no nace de invocar esta skill.
 
 Modelar invariantes en el dominio; comprobar permisos e identidad/tenant en límites y casos de uso con contratos confiables. Tratar errores externos mediante contratos de error del núcleo; el adaptador los traduce. Registrar datos necesarios sin secretos ni cuerpos completos con información personal. La UI ofrece errores comprensibles y conserva los detalles técnicos en la observabilidad apropiada.
 
 Probar invariantes, casos de uso, contratos y adaptadores afectados. Agregar pruebas de concurrencia, idempotencia, autorización, migración y UI cuando sus criterios las requieran. Un chequeo de imports es estructural; no demuestra aislamiento, reglas correctas ni una integración operativa.
 
-En un repositorio existente, identificar los desvíos concretos y proponer cortes de refactorización con alcance. No atribuir pureza de dominio a una estructura de carpetas ni migrar toda la aplicación para completar una tarea pequeña.
+En un repositorio existente, identificar los desvíos concretos y proponer cortes de refactorización con alcance. Una ubicación heredada fuera de src se registra como desvío, no como excepción confirmada; no agregar contextos de negocio allí ni migrar toda la aplicación sin un pedido que lo cubra. No atribuir pureza de dominio a una estructura de carpetas: revisar imports, herencia, tipos y dependencias de Domain/Application, y adaptar autoload/composición para cargar src.

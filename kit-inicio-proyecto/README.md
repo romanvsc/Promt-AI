@@ -1,12 +1,18 @@
 # Kit de inicio de proyectos
 
-Base para preparar proyectos con arquitectura hexagonal y DDD, consultar el stack y mantener un plan maestro con visor. Requiere Python 3.9 o posterior para las herramientas; no requiere paquetes Python ni un framework de producto. El perfil se elige con el usuario al iniciar cada proyecto.
+Base para preparar proyectos con arquitectura hexagonal y DDD, consultar fuentes y stack y mantener un plan maestro con visor. La raíz del código propio es `/src` en la raíz del repositorio, siempre salvo elección expresa del usuario. Requiere Python 3.9 o posterior para las herramientas; no requiere paquetes Python ni un framework de producto. El perfil se elige con el usuario al iniciar cada proyecto.
 
 ## Uso habitual
 
 1. Copiar o adjuntar esta carpeta completa, o su ZIP, en el chat del proyecto nuevo.
 2. Pegar [PROMPT_MAESTRO.md](PROMPT_MAESTRO.md) y completar los datos conocidos.
-3. El agente revisa las fuentes, consulta requisitos y stack pendientes y prepara el proyecto. El código funcional empieza cuando se lo solicites.
+3. El agente pregunta explícitamente qué fuentes usar y si hay otras además de las detectadas, consulta requisitos y stack pendientes y prepara el proyecto. El código funcional empieza cuando se lo solicites.
+
+## Fuentes y consulta inicial
+
+Las fuentes son tu descripción, documentos, planes previos, diseños, contratos de API o sistemas de referencia; el código y las pruebas existentes sirven de evidencia. No hay un directorio obligatorio para entregarlas: pueden ser adjuntos, enlaces, mensajes o archivos en su ubicación actual.
+
+El agente registra tu respuesta y el inventario en `docs/fuentes/README.md`. Ese índice empieza con la consulta pendiente. Antes de cerrar INI-001 debe recibir y registrar la respuesta, aunque sea «no tengo documentos adicionales; partimos de mi descripción». Encontrar adjuntos no reemplaza preguntar si hay otras fuentes. Si ya contestaste explícitamente, se conserva esa respuesta sin repetir. Podés guardar copias locales en `docs/fuentes/documentos/` si te sirve; es opcional.
 
 El prompt contiene la especificación suficiente para generar una base compatible si el kit no está adjunto; los recursos incluidos permiten reutilizar una implementación probada del validador y el visor.
 
@@ -28,18 +34,28 @@ Perfiles disponibles: `base` (stack pendiente), `laravel`, `flutter` y `go`. Son
 
 Un proyecto puede combinar stacks. `--profile` indica la guía inicial de instalación; la ficha conserva el stack de cada componente y la skill de arquitectura consulta los perfiles que correspondan. No obliga a usar el mismo lenguaje en backend, cliente y herramientas.
 
-El instalador no sobrescribe archivos diferentes, no sigue enlaces simbólicos en sus destinos y comprueba todas las colisiones antes de escribir. Una repetición con la misma configuración conserva los archivos idénticos. Si ya existe `AGENTS.md`, un plan u otra skill con contenido distinto, informa las rutas en conflicto sin crear un proyecto parcial; el agente debe conciliar esa instalación existente. No instala dependencias del producto ni genera sus carpetas de código.
+El instalador no sobrescribe archivos diferentes, no sigue enlaces simbólicos en sus destinos y comprueba todas las colisiones antes de escribir. Una repetición con la misma configuración conserva los archivos idénticos. Si ya existe `AGENTS.md`, un plan u otra skill con contenido distinto, informa las rutas en conflicto sin crear un proyecto parcial; el agente debe conciliar esa instalación existente. Prepara `src/.gitkeep`, sin contextos inventados, dependencias del producto ni código funcional.
+
+## Raíz del código y excepciones
+
+Todos los perfiles usan `src/` por defecto. En Laravel, los contextos se organizan como `src/<Contexto>/{Domain,Application,Infrastructure,UI}` y se configura autoload hacia esa ruta. `app/Contexts` no es una alternativa automática. Los perfiles Go y Flutter también conservan la raíz src adaptando sus paquetes e imports; solo los puntos técnicos de arranque/composición quedan en las rutas que requieran sus herramientas.
+
+Solo si el usuario pidió expresamente otra ubicación, el agente registra la solicitud y fecha en arquitectura y decisiones y usa `--source-root ruta/relativa`. Esta opción no selecciona una raíz según el framework. `.agents/project.json` registra `source_root` y si hay una excepción; las repeticiones conservan la raíz elegida. `/src` aquí significa `<raíz-del-repositorio>/src`, no `/src` del sistema operativo.
+
+Para actualizar una instalación anterior, conciliar AGENTS, skills y documentación con esta versión y registrar la raíz y la consulta de fuentes. No volver a ejecutar el instalador para sobrescribirlos ni mover código existente automáticamente: un traslado requiere un pedido que cubra esa refactorización.
 
 ## Recursos instalados
 
 ```text
 AGENTS.md
+src/.gitkeep
 .agents/project.json
 .agents/project-kit.json
 .agents/skills/arquitectura-hexagonal-ddd/
 .agents/skills/plan-maestro-desarrollo-sistema/
 .agents/skills/manage-project-roadmap/
 docs/proyecto.md
+docs/fuentes/README.md
 docs/arquitectura/README.md
 docs/decisiones/README.md
 docs/plan-maestro/README.md
